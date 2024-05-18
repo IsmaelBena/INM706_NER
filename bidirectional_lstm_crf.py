@@ -51,9 +51,8 @@ class BiLSTM_CRF_Model(nn.Module):
         return lstm_feats
 
     def score_sentence(self, feats, tags):
-        score = torch.zeros(1)
-        print(tags.shape, score.shape)
-        tags = torch.cat([torch.tensor([0], dtype=torch.long).to(self.device), tags])
+        score = torch.zeros(1).to(self.device)
+        tags = torch.cat([torch.tensor([0], dtype=torch.long, device=self.device), tags])
         for i, feat in enumerate(feats):
             score = score + self.transitions[tags[i + 1], tags[i]] + feat[tags[i + 1]]
         score = score + self.transitions[0, tags[-1]]
@@ -92,10 +91,16 @@ class BiLSTM_CRF_Model(nn.Module):
         return path_score, best_path
 
     def forward(self, sentences, tags):
+        print('forward call')
         feats = self.get_lstm_features(sentences)
-        forward_score = self.forward_alg(feats)
-        gold_score = self.score_sentence(feats, tags)
-        return forward_score - gold_score
+        batch_size = sentences.size(0)
+        forward_scores = torch.zeros(batch_size, device=self.device)
+        gold_scores = torch.zeros(batch_size, device=self.device)
+        for i in range(batch_size):
+            print(f'loop: {i}')
+            forward_scores[i] = self.forward_alg(feats[i])
+            gold_scores[i] = self.score_sentence(feats[i], tags[i])
+        return forward_scores.sum() - gold_scores.sum()
 
     def predict(self, sentences):
         lstm_feats = self.get_lstm_features(sentences)

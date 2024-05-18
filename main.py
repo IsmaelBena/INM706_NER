@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import yaml
 import numpy as np
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import classification_report
@@ -20,10 +21,13 @@ import matplotlib.pyplot as plt
 import wandb
 
 ############################################################################################
-###                           Create a checkpoints folder                                ###
+###                           Configurations                                             ###
 ############################################################################################
 
-checkpoint_dir = os.path.join(os.getcwd(), "checkpoints")
+with open('config.yaml', 'r') as file:
+    config = yaml.safe_load(file)
+
+checkpoint_dir = os.path.join(os.getcwd(), config["training_config"]["checkpoints_folder"])
 
 if not os.path.exists(checkpoint_dir):
     os.makedirs(checkpoint_dir)
@@ -32,7 +36,7 @@ if not os.path.exists(checkpoint_dir):
 ###                            Setup the Dataset                                         ###
 ############################################################################################
 
-local_raw_dataset = LocalDataset('dataset')
+local_raw_dataset = LocalDataset(config["data_config"]["dataset_file"])
 local_raw_dataset.loadDataset()
 local_data_dict = local_raw_dataset.prepareDataset()
 
@@ -41,9 +45,12 @@ label_ids = local_data_dict["label_ids"]
 train_dataset = NERDataset((local_data_dict["train_sentences"], local_data_dict["train_labels"]))
 val_dataset = NERDataset((local_data_dict["val_sentences"], local_data_dict["val_labels"]))
 test_dataset = NERDataset((local_data_dict["test_sentences"], local_data_dict["test_labels"]))
-train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-val_dataloader = DataLoader(val_dataset, batch_size=32, shuffle=True)
-test_dataloader = DataLoader(test_dataset, batch_size=32, shuffle=True)
+
+print('batchsize:', config["training_config"]["batch_size"])
+
+train_dataloader = DataLoader(train_dataset, batch_size=config["training_config"]["batch_size"], shuffle=True)
+val_dataloader = DataLoader(val_dataset, batch_size=config["training_config"]["batch_size"], shuffle=True)
+test_dataloader = DataLoader(test_dataset, batch_size=config["training_config"]["batch_size"], shuffle=True)
 
 ############################################################################################
 ###                            Training Variables                                        ###
@@ -131,7 +138,9 @@ def test_crf_model(model, optimizer, num_of_epochs, training_dataloader, validat
     for epoch in range(num_of_epochs):
         print(f'Running Epoch {epoch + 1}')
         model.train()
+        counter = 0
         for sentences, labels in train_dataloader:
+            print(f'Progress: {counter}/{len(train_dataloader)}')
             x = sentences.to(device)
             y = labels.to(device)
 
@@ -140,6 +149,9 @@ def test_crf_model(model, optimizer, num_of_epochs, training_dataloader, validat
 
             loss.backward()
             optimizer.step()
+
+            counter += 1
+
 
         epoch_training_losses.append(loss.item())
         print(f"Epoch {epoch + 1} Complete, Loss: {loss.item()}")
@@ -181,7 +193,7 @@ def test_model(model, test_dataloader, label_ids, logger):
     true_labels = []
     tags = [key for key in label_ids.keys()]
     print(f'Testing Model')
-    for sentences, labels in val_dataloader:
+    for sentences, labels in test_dataloader:
 
         x = sentences.to(device)
         y = labels.to(device)
@@ -223,20 +235,20 @@ def test_model(model, test_dataloader, label_ids, logger):
 ###                            Training calls                                            ###
 ############################################################################################
 
-wandb_logger = Logger(f"inm706_cw_bidirectional_LSTM_CRF_training", project='INM706_CW')
+wandb_logger = Logger(f"inm706_cw_base_LSTM_training", project='INM706_CW')
 logger = wandb_logger.get_logger()
 
-# bi_LSTM_model = BiLSTM_Model(local_data_dict["vocab_size"], device)
+lstm_model = LSTM_Model(local_data_dict["vocab_size"], device)
 bi_LSTM_crf_model = BiLSTM_CRF_Model(local_data_dict["vocab_size"], local_data_dict["tagset_size"], device)
 
 
 loss_function = nn.CrossEntropyLoss()
-optimizer = optim.SGD(bi_LSTM_crf_model.parameters(), lr=0.01)
+optimizer = optim.SGD(bi_LSTM_crf_model.parameters(), lr=config["training_config"]["lr"])
 
-# train_model(bi_LSTM_model, loss_function, optimizer, 500, train_dataloader, val_dataloader, "biLSTM_500ep", logger)
+train_model(lstm_model, loss_function, optimizer, config["training_config"]["epochs"], train_dataloader, val_dataloader, f'LSTM_{config["training_config"]["epochs"]}ep', logger)
 
-
-test_crf_model(bi_LSTM_crf_model, optimizer, 5, train_dataloader, val_dataloader, "biLSTM_crf_5ep", logger)
+optimizer = optim.SGD(bi_LSTM_crf_model.parameters(), lr=config["training_config"]["lr"])
+# test_crf_model(bi_LSTM_crf_model, optimizer, config["training_config"]["epochs"], train_dataloader, val_dataloader, "biLSTM_crf_5ep", logger)
 
 ############################################################################################
 ###                            Testing calls                                             ###

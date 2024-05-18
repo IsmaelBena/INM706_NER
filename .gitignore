@@ -5,5 +5,4 @@ INM706_cw_env/
 wandb/
 
 # Python Cache
-
 __pycache__/

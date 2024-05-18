@@ -23,6 +23,7 @@ class LocalDataset():
         self.padded_labels = []
         self.max_length = 0
 
+
     # Retrieve the dataset from the CSV file
     def loadDataset(self):
         print(f'Loading local csv from: {os.path.join(os.getcwd(), self.dir)}')
@@ -57,6 +58,7 @@ class LocalDataset():
             self.vocab_ids[word] = ind + 1
 
         self.tagset_size = len(self.raw_data['Tag'].unique())
+        self.vocab = self.raw_data['Word'].unique()
         self.vocab_size = len(self.raw_data['Word'].unique())
 
         start_of_setence_indices = self.raw_data[self.raw_data['Sentence #'].notnull()].index.to_numpy()
@@ -89,8 +91,6 @@ class LocalDataset():
 
         shuffles_sentences, shuffled_labels = shuffle(self.padded_tokens, self.padded_labels)
 
-
-
         train_sentences = self.padded_tokens[:int(len(self.padded_tokens)*train_split)]
         train_labels = self.padded_labels[:int(len(self.padded_labels)*train_split)]
         val_sentences = self.padded_tokens[int(len(self.padded_tokens)*train_split):int(len(self.padded_tokens)*(train_split+validation_split))]
@@ -108,7 +108,8 @@ class LocalDataset():
             "test_labels": test_labels,
             "vocab_size":  self.vocab_size,
             "tagset_size": self.tagset_size,
-            "label_ids": self.label_ids
+            "label_ids": self.label_ids,
+            "vocab": self.vocab
         }
 
 class NERDataset(Dataset):
