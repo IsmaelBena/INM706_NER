@@ -1,0 +1,9 @@
+# Environment Files
+INM706_cw_env/
+
+# Wandb logs
+wandb/
+
+# Python Cache
+
+__pycache__/
