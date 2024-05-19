@@ -106,27 +106,3 @@ class BiLSTM_CRF_Model(nn.Module):
         lstm_feats = self.get_lstm_features(sentences)
         score, tag_seq = self.viterbi_decode(lstm_feats)
         return score, tag_seq
-
-# Example usage
-# vocab_size = 100  # Size of the vocabulary
-# tagset_size = 5   # Number of unique tags
-# embedding_dim = 50
-# hidden_dim = 100
-
-# model = BiLSTM_CRF(vocab_size, tagset_size)
-# optimizer = optim.SGD(model.parameters(), lr=0.01)
-
-# # Example input (batch of sequences)
-# sentences = torch.tensor([[1, 2, 3, 4], [4, 3, 2, 1]], dtype=torch.long)
-# tags = torch.tensor([[0, 1, 2, 3], [3, 2, 1, 0]], dtype=torch.long)
-
-# # Training step
-# model.zero_grad()
-# loss = model(sentences, tags)
-# loss.backward()
-# optimizer.step()
-
-# # Prediction step
-# with torch.no_grad():
-#     score, tag_seq = model.predict(sentences[0])
-#     print(tag_seq)
