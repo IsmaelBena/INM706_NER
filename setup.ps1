@@ -4,4 +4,9 @@ pip install virtualenv
 virtualenv INM706_cw_env
 INM706_cw_env/Scripts/activate
 pip install -r requirements.txt
+pip install numpy
+pip install pandas
+pip install scikit-learn
+pip install wandb
+pip install seaborn
 pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu118

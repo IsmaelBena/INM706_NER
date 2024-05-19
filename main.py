@@ -46,11 +46,9 @@ train_dataset = NERDataset((local_data_dict["train_sentences"], local_data_dict[
 val_dataset = NERDataset((local_data_dict["val_sentences"], local_data_dict["val_labels"]))
 test_dataset = NERDataset((local_data_dict["test_sentences"], local_data_dict["test_labels"]))
 
-print('batchsize:', config["training_config"]["batch_size"])
-
-train_dataloader = DataLoader(train_dataset, batch_size=config["training_config"]["batch_size"], shuffle=True)
-val_dataloader = DataLoader(val_dataset, batch_size=config["training_config"]["batch_size"], shuffle=True)
-test_dataloader = DataLoader(test_dataset, batch_size=config["training_config"]["batch_size"], shuffle=True)
+train_dataloader = DataLoader(train_dataset, batch_size=config["training_config"]["batch_size"], shuffle=True, drop_last=True)
+val_dataloader = DataLoader(val_dataset, batch_size=config["training_config"]["batch_size"], shuffle=True, drop_last=True)
+test_dataloader = DataLoader(test_dataset, batch_size=config["training_config"]["batch_size"], shuffle=True, drop_last=True)
 
 ############################################################################################
 ###                            Training Variables                                        ###
@@ -62,7 +60,6 @@ else:
     device = torch.device('cpu')
 
 print(f'Device: {device}')
-
 
 ############################################################################################
 ###                    Training annd Testing Functions                                   ###
@@ -194,7 +191,6 @@ def test_model(model, test_dataloader, label_ids, logger):
     tags = [key for key in label_ids.keys()]
     print(f'Testing Model')
     for sentences, labels in test_dataloader:
-
         x = sentences.to(device)
         y = labels.to(device)
         
@@ -229,38 +225,37 @@ def test_model(model, test_dataloader, label_ids, logger):
         'test_acc': accuracy_score(flattened_preds, flattened_trues)
         })
 
-
-
 ############################################################################################
 ###                            Training calls                                            ###
 ############################################################################################
 
-wandb_logger = Logger(f"inm706_cw_base_LSTM_training", project='INM706_CW')
-logger = wandb_logger.get_logger()
+# wandb_logger = Logger(f"inm706_dlt_cw_base_LSTM_training", project='INM706_CW')
+# logger = wandb_logger.get_logger()
 
-lstm_model = LSTM_Model(local_data_dict["vocab_size"], device)
-bi_LSTM_crf_model = BiLSTM_CRF_Model(local_data_dict["vocab_size"], local_data_dict["tagset_size"], device)
+# lstm_model = LSTM_Model(local_data_dict["vocab_size"], device)
+# # bi_LSTM_crf_model = BiLSTM_CRF_Model(local_data_dict["vocab_size"], local_data_dict["tagset_size"], device)
 
+# loss_function = nn.CrossEntropyLoss()
+# optimizer = optim.SGD(lstm_model.parameters(), lr=config["training_config"]["lr"])
 
-loss_function = nn.CrossEntropyLoss()
-optimizer = optim.SGD(bi_LSTM_crf_model.parameters(), lr=config["training_config"]["lr"])
+# train_model(lstm_model, loss_function, optimizer, config["training_config"]["epochs"], train_dataloader, val_dataloader, f'LSTM_{config["training_config"]["epochs"]}ep', logger)
 
-train_model(lstm_model, loss_function, optimizer, config["training_config"]["epochs"], train_dataloader, val_dataloader, f'LSTM_{config["training_config"]["epochs"]}ep', logger)
-
-optimizer = optim.SGD(bi_LSTM_crf_model.parameters(), lr=config["training_config"]["lr"])
+# optimizer = optim.SGD(bi_LSTM_crf_model.parameters(), lr=config["training_config"]["lr"])
 # test_crf_model(bi_LSTM_crf_model, optimizer, config["training_config"]["epochs"], train_dataloader, val_dataloader, "biLSTM_crf_5ep", logger)
 
 ############################################################################################
 ###                            Testing calls                                             ###
 ############################################################################################
 
-# checkpoint_name = 'baseline_LSTM'
+# checkpoint_name = 'biLSTM_500ep'
 
-# wandb_logger = Logger(f"inm706_cw_base_LSTM_first_test", project='INM706_CW')
+# wandb_logger = Logger(f"inm706_cw_bi_LSTM_test", project='INM706_CW')
 # test_logger = wandb_logger.get_logger()
 
 # print(f'loading model')
 # with open(f'{checkpoint_dir}\\{checkpoint_name}.pkl', 'rb') as file:
 #     testing_model = pickle.load(file)
+
+# testing_model.to(device)
 
 # test_model(testing_model, test_dataloader, label_ids, test_logger)

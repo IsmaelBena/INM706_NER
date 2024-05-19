@@ -1,7 +1,7 @@
 data_config:
   dataset_file: "dataset"
 training_config:
-  epochs: 500
+  epochs: 1
   batch_size: 32
   lr: 0.01
   checkpoints_folder: "checkpoints"
